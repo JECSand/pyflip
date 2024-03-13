@@ -1,0 +1,97 @@
+version: '3.7'
+networks:
+  services-network:
+    driver: bridge
+
+services:
+  mongo1:
+    build: mongo:7.0
+    restart: always
+    hostname: mongo1
+    command: ["--replSet", "rs0", "--bind_ip_all", "--port", "27017"]
+    networks:
+      - services-network
+    ports:
+      - 27017:27017
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: echo "try { rs.status() } catch (err) { rs.initiate({_id:'rs0',members:[{_id:0,host:'host.docker.internal:27017'}]}) }" | mongosh --port 27017 --quiet
+      interval: 5s
+      timeout: 30s
+      start_period: 0s
+      start_interval: 1s
+      retries: 30
+    volumes:
+      - "mongo1_data:/data/db"
+      - "mongo1_config:/data/configdb"
+
+  mongodb-seed:
+    image: mongo:7.0
+    links:
+      - mongo1
+    volumes:
+      - ./mongo-seed:/mongo-seed
+    command:
+      /mongo-seed/import.sh
+    depends_on:
+      - mongo1
+
+  pulsar:
+    image: apachepulsar/pulsar-all:latest
+    container_name: pulsar
+    hostname: pulsar
+    restart: always
+    networks:
+      - services-network
+    environment:
+      - clusterName=standalone
+      - PULSAR_MEM=-Xms512m -Xmx512m -XX:MaxDirectMemorySize=1g
+      - PULSAR_STANDALONE_USE_ZOOKEEPER=1
+      - functionsWorkerEnabled=true
+      - transactionCoordinatorEnabled=true
+      - acknowledgmentAtBatchIndexLevelEnabled=true
+      - systemTopicEnabled=true
+      - brokerDeduplicationEnabled=true
+    ports:
+      - "6650:6650"
+      - "8080:8080"
+    volumes:
+      - pulsar_data:/pulsar/data
+      - ./init-pulsar-connector.sh:/init-pulsar-connector.sh
+      - ../connectors/mongo:/mongo-connectors
+      # - ../connectors/mongo/source/mongo-source-config.yaml:/mongo-source-config.yaml
+    command: bash -c "bin/apply-config-from-env.py conf/standalone.conf && exec bin/pulsar standalone -nss && exec bin/pulsar sql-worker start"
+    depends_on:
+      - mongo1
+
+  dashboard:
+    image: apachepulsar/pulsar-manager:latest
+    container_name: dashboard
+    hostname: dashboard
+    networks:
+      - services-network
+    ports:
+      - "9527:9527"
+      - "7750:7750"
+    depends_on:
+      - pulsar
+    links:
+      - pulsar
+    environment:
+      SPRING_CONFIGURATION_FILE: /pulsar-manager/pulsar-manager/application.properties
+
+  dashboard-init:
+    image: apachepulsar/pulsar:latest
+    networks:
+      - services-network
+    volumes:
+      - ./init-dashboard.sh:/init-dashboard.sh
+    command: /init-dashboard.sh
+    depends_on:
+      - dashboard
+
+volumes:
+  mongo1_data:
+  mongo1_config:
+  pulsar_data:
