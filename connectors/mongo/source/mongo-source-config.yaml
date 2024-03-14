@@ -6,6 +6,6 @@ archive: "connectors/pulsar-io-mongo-3.2.0.nar"
 parallelism: 1
 
 configs:
-  mongoUri: "mongodb://mongo1:27017/?replicaSet=rs0"
+  mongoUri: "mongodb://mongo1:27017/geoglify?replicaSet=rs0"
   database: "geoglify"
   collection: "ships"

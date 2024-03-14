@@ -22,5 +22,17 @@
     "length": 99,
     "name": "EEMS SOLAR",
     "mmsi": 246367000
+  },
+  {
+    "breadth": 10,
+    "country_name": "Netherlands",
+    "country_code": "NL",
+    "call_sign": "PBTJ2",
+    "cargo": "Cargo",
+    "draught": 3.299999952316284,
+    "imo": 9559614,
+    "length": 1111,
+    "name": "EEMS SOLAR2",
+    "mmsi": 246367000
   }
 ]
