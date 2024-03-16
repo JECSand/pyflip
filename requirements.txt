@@ -1,0 +1,4 @@
+multidict==6.0.5
+protobuf==5.26.0
+pulsar==2.0.2
+pulsar-client==3.4.0

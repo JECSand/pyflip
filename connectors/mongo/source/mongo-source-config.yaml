@@ -9,3 +9,4 @@ configs:
   mongoUri: "mongodb://mongo1:27017/geoglify?replicaSet=rs0"
   database: "geoglify"
   collection: "ships"
+  syncType: "full_sync"

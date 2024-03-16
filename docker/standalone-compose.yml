@@ -31,7 +31,7 @@ services:
     links:
       - mongo1
     volumes:
-      - ./mongo-seed:/mongo-seed
+      - ../scripts/mongo/test-seed:/mongo-seed
     command: /mongo-seed/import.sh
     depends_on:
       - mongo1
@@ -57,7 +57,9 @@ services:
       - "8080:8080"
     volumes:
       - pulsar_data:/pulsar/data
-      - ./init-pulsar-connector.sh:/init-pulsar-connector.sh:ro
+      - ../scripts/pulsar/init-pulsar-connectors.sh:/init-pulsar-connectors.sh:ro
+      - ../scripts/pulsar/init-pulsar-functions.sh:/init-pulsar-functions.sh:ro
+      - ../functions:/functions
       - ../connectors/mongo:/mongo-connectors
     command: bash -c "bin/apply-config-from-env.py conf/standalone.conf && exec bin/pulsar standalone -nss && exec bin/pulsar sql-worker start"
     depends_on:
@@ -84,7 +86,7 @@ services:
     networks:
       - services-network
     volumes:
-      - ./init-dashboard.sh:/init-dashboard.sh:ro
+      - ../scripts/pulsar/init-dashboard.sh:/init-dashboard.sh:ro
     command: /init-dashboard.sh
     depends_on:
       - dashboard

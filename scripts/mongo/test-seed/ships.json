@@ -1,13 +1,13 @@
 [
   {
-    "breadth": "",
+    "breadth": 0,
     "country_name": "Panama",
     "country_code": "PA",
     "call_sign": "3FEI5",
     "cargo": "Cargo",
     "draught": 7,
     "imo": 9660607,
-    "length": "",
+    "length": 111,
     "name": "MEDI MANILA",
     "mmsi": 353664000
   },
