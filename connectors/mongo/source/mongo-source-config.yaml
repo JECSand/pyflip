@@ -2,7 +2,7 @@ tenant: "public"
 namespace: "default"
 name: "mongo-source"
 topicName: "mongo-topic"
-archive: "connectors/pulsar-io-mongo-3.2.0.nar"
+archive: "connectors/pulsar-io-mongo-3.2.1.nar"
 parallelism: 1
 
 configs:
