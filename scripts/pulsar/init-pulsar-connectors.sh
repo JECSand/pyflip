@@ -8,14 +8,14 @@ MONGODB_SINK_DIRECTORY='/mongo-connectors/sink'
 
 
 # Initialize the MongoDB source connectors
-#echo "Initializing MongoDB Source Connectors"
-#for file in "$MONGODB_SOURCE_DIRECTORY"/*
-#do
-#  if [[ -f "$file" && ( "$file" == *.yaml || "$file" == *.yml )  ]]; then
-#    ./bin/pulsar-admin sources create \
-#      --sourceConfigFile "$file"
-#  fi
-#done
+echo "Initializing MongoDB Source Connectors"
+for file in "$MONGODB_SOURCE_DIRECTORY"/*
+do
+  if [[ -f "$file" && ( "$file" == *.yaml || "$file" == *.yml )  ]]; then
+    ./bin/pulsar-admin sources create \
+      --sourceConfigFile "$file"
+  fi
+done
 
 # Initialize the MongoDB source connectors
 echo "Initializing MongoDB Sink Connectors"

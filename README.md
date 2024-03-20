@@ -31,7 +31,7 @@ docker exec -it docker-jobmanager-1 ./bin/sql-client.sh --jar /opt/flink/lib/fli
 docker exec -it docker-jobmanager-1 /init-flink-cluster.sh
 docker exec -it docker-taskmanager-1 /init-flink-cluster.sh
 
-
+./flink-1.14.3/bin/flink run -py /flink/processes/example.py -pyclientexec venv.zip/venv/bin/python3 -pyexec venv.zip/venv/bin/python3 -—output “path_to\out.txt”
 
 ```
 
