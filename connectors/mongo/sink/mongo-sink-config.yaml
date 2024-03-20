@@ -1,14 +1,11 @@
 tenant: "public"
 namespace: "default"
-name: "mongo-sink"
-topicName: "mongo-sink"
-archive: "connectors/pulsar-io-mongo-3.2.1.nar"
-parallelism: 1
+name: "mongo-test-sink"
+inputs:
+  - mongo-sink
 
 configs:
   mongoUri: "mongodb://mongo1:27017/geoglify?replicaSet=rs0"
   database: "geoglify"
   collection: "shipsSync"
   syncType: "full_sync"
-  inputs:
-    - "persistent://public/default/mongo-sink"
