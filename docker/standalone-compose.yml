@@ -4,6 +4,52 @@ networks:
     driver: bridge
 
 services:
+
+  jobmanager:
+    image: flink:1.16.2-scala_2.12-java11
+    ports:
+      - "8081:8081"
+    command:
+      - jobmanager
+    restart: on-failure
+    networks:
+      - services-network
+    volumes:
+      - ../flink/processes:/flink/processes
+      - ../flink/queries:/flink/queries
+      - ../scripts/flink/init-flink-cluster.sh:/init-flink-cluster.sh:ro
+      - ../scripts/flink/init-flink-sql.sh:/init-flink-sql.sh:ro
+      - ../scripts/flink/start-flink-cluster.sh:/start-flink-cluster.sh:ro
+    environment:
+      - JOB_MANAGER_RPC_ADDRESS=jobmanager
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: jobmanager
+        state.backend: rocksdb
+        state.backend.rocksdb.localdir: /tmp/flink-rocksdb
+
+  taskmanager:
+    image: flink:1.16.2-scala_2.12-java11
+    depends_on:
+      - jobmanager
+    command:
+      - taskmanager
+    restart: on-failure
+    networks:
+      - services-network
+    volumes:
+      - ../scripts/flink/init-flink-cluster.sh:/init-flink-cluster.sh:ro
+      - ../scripts/flink/init-flink-sql.sh:/init-flink-sql.sh:ro
+    scale: 1
+    environment:
+      - JOB_MANAGER_RPC_ADDRESS=jobmanager
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: jobmanager
+        taskmanager.numberOfTaskSlots: 2
+        state.backend: rocksdb
+        state.backend.rocksdb.localdir: /tmp/flink-rocksdb
+
   mongo1:
     image: mongo:latest
     restart: always
@@ -59,6 +105,7 @@ services:
       - pulsar_data:/pulsar/data
       - ../scripts/pulsar/init-pulsar-connectors.sh:/init-pulsar-connectors.sh:ro
       - ../scripts/pulsar/init-pulsar-functions.sh:/init-pulsar-functions.sh:ro
+      - ../scripts/pulsar/init-pulsar-topics.sh:/init-pulsar-topics.sh:ro
       - ../functions:/functions
       - ../connectors/mongo:/mongo-connectors
     command: bash -c "bin/apply-config-from-env.py conf/standalone.conf && exec bin/pulsar standalone -nss && exec bin/pulsar sql-worker start"

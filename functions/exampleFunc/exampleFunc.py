@@ -1,24 +1,14 @@
 from pulsar import Function
 import json
+import time
 
 
 def mongo_source(func):
     def wrapper(*args, **kwargs):
         modified_args = list(args)
         if len(modified_args) > 1:
-            """
-            replaces = [
-                ['key:[', "\"key\":["],
-                [' properties:[', " \"properties\":["],
-                ['content:{"', "\"content\":{\""]
-            ]
-            modified_args[1] = (modified_args[1]
-                                .replace(replaces[0][0], replaces[0][1])
-                                .replace(replaces[1][0], replaces[1][1])
-                                .replace(replaces[2][0], replaces[2][1]))
-            """
+            # Modify incoming input data here
             modified_args[1] = (modified_args[1])
-
         result = func(*modified_args, **kwargs)
         return result
 
@@ -43,11 +33,19 @@ class ExampleFunction(Function):
         logger = context.get_logger()
         data = json.loads(input)
         logger.info("\nMessage: {0}".format(data))
-        # logger.info("Content: {0}".format(data.get("content")))
+        # Setup instance configs
+        if "output-topic" in context.get_user_config_map():
+            self.sink_topic = context.get_user_config_value("output-topic")
+        if "flink-topic" in context.get_user_config_map():
+            self.flink_topic = context.get_user_config_value("flink-topic")
+        msg_conf = {"properties": {k: v for d in [{"input_topic" : context.get_current_message_topic_name()}, context.get_message_properties()] for k, v in d.items()},
+                    "partition_key": context.get_partition_key(),
+                    "event_timestamp": int(time.time())}
+        # Output topic router
         if self.is_insert(data):
-            context.publish(self.click_topic, input)
+            context.publish(self.sink_topic, input, msg_conf)
         elif self.is_update(data):
-            context.publish(self.flink_topic, input)
+            context.publish(self.flink_topic, input, msg_conf)
         else:
             logger.warn("The item {0} is neither an insert nor an update".format(input))
-        return json.dumps(data)
+        return

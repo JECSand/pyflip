@@ -4,7 +4,7 @@ name: "ExampleFunction"
 className: "exampleFunc.ExampleFunction"
 inputs:
   - "persistent://public/default/mongo-topic" # this function will read messages from these topics
-output: 'persistent://public/default/mongo-topic-out' # the return value of this function will be sent to this topic
-log-topic: 'persistent://public/default/ExampleFunction_logs'
+log-topic: 'persistent://public/default/example-logs'
+user-config: '{"flink-topic":"persistent://public/default/mongo-topic-errors","output-topic":"persistent://public/default/mongo-sink"}'
 autoAck: true
 parallelism: 1

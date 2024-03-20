@@ -10,3 +10,5 @@ configs:
   database: "geoglify"
   collection: "shipsSync"
   syncType: "full_sync"
+  inputs:
+    - "persistent://public/default/mongo-sink"
