@@ -22,11 +22,11 @@ class ExampleFunction(Function):
 
     @staticmethod
     def is_insert(item):
-        return 'operation' in item and item['operation'] == 'insert'
+        return 'operation' in item and item['operation'] == 'INSERT'
 
     @staticmethod
     def is_update(item):
-        return 'operation' in item and item['operation'] == 'update'
+        return 'operation' in item and item['operation'] == 'UPDATE'
 
     @mongo_source
     def process(self, input, context):
@@ -38,7 +38,7 @@ class ExampleFunction(Function):
             self.sink_topic = context.get_user_config_value("output-topic")
         if "flink-topic" in context.get_user_config_map():
             self.flink_topic = context.get_user_config_value("flink-topic")
-        msg_conf = {"properties": {k: v for d in [{"input_topic" : context.get_current_message_topic_name()}, context.get_message_properties()] for k, v in d.items()},
+        msg_conf = {"properties": {k: v for d in [{"input_topic": context.get_current_message_topic_name()}, context.get_message_properties()] for k, v in d.items()},
                     "partition_key": context.get_partition_key(),
                     "event_timestamp": int(time.time())}
         # Output topic router
