@@ -1,9 +1,9 @@
-FROM amd64/flink:1.18.1-scala_2.12-java11
+FROM flink:1.18.1
 USER root
 
 # install python3 and pip3
 RUN apt-get update -y && \
-apt-get install -y  python3 python3-pip default-jdk python3-dev openjdk-11-jdk && rm -rf /var/lib/apt/lists/*
+apt-get install -y  python3 python3-pip python3-dev && rm -rf /var/lib/apt/lists/*
 RUN ln -s /usr/bin/python3 /usr/bin/python
 
 #RUN : \
