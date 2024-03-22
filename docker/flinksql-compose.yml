@@ -1,0 +1,134 @@
+version: '3.7'
+networks:
+  services-network:
+    driver: bridge
+services:
+
+  jobmanager:
+    image: flink:1.16.2-scala_2.12-java11
+    ports:
+      - "8081:8081"
+    command:
+      - jobmanager
+    restart: on-failure
+    networks:
+      - services-network
+    environment:
+      - JOB_MANAGER_RPC_ADDRESS=jobmanager
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: jobmanager
+        state.backend: rocksdb
+        state.backend.rocksdb.localdir: /tmp/flink-rocksdb
+
+  taskmanager:
+    image: flink:1.16.2-scala_2.12-java11
+    depends_on:
+      - jobmanager
+    command:
+      - taskmanager
+    restart: on-failure
+    networks:
+      - services-network
+    scale: 1
+    environment:
+      - JOB_MANAGER_RPC_ADDRESS=jobmanager
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: jobmanager
+        taskmanager.numberOfTaskSlots: 2
+        state.backend: rocksdb
+        state.backend.rocksdb.localdir: /tmp/flink-rocksdb
+
+  mongo1:
+    image: mongo:latest
+    restart: always
+    container_name: mongo1
+    command: ["--replSet", "rs0", "--bind_ip_all", "--port", "27017"]
+    networks:
+      - services-network
+    ports:
+      - 27017:27017
+    healthcheck:
+      test: echo "try { rs.status() } catch (err) { rs.initiate({_id:'rs0',members:[{_id:0,host:'mongo1:27017'}]}) }" | mongosh --port 27017 --quiet
+      interval: 5s
+      timeout: 30s
+      start_period: 0s
+      retries: 30
+    volumes:
+      - "mongo1_data:/data/db"
+      - "mongo1_config:/data/configdb"
+
+  mongo-seed:
+    image: mongo:latest
+    container_name: mongo-seed
+    networks:
+      - services-network
+    links:
+      - mongo1
+    volumes:
+      - ../scripts/mongo/test-seed:/mongo-seed
+    command: /mongo-seed/import.sh
+    depends_on:
+      - mongo1
+
+  pulsar:
+    image: apachepulsar/pulsar-all:latest
+    container_name: pulsar
+    hostname: pulsar
+    restart: always
+    networks:
+      - services-network
+    environment:
+      - clusterName=standalone
+      - PULSAR_MEM=-Xms512m -Xmx512m -XX:MaxDirectMemorySize=1g
+      - PULSAR_STANDALONE_USE_ZOOKEEPER=1
+      - functionsWorkerEnabled=true
+      - transactionCoordinatorEnabled=true
+      - acknowledgmentAtBatchIndexLevelEnabled=true
+      - systemTopicEnabled=true
+      - brokerDeduplicationEnabled=true
+    ports:
+      - "6650:6650"
+      - "8080:8080"
+    volumes:
+      - pulsar_data:/pulsar/data
+      - ../scripts/pulsar/init-pulsar-connectors.sh:/init-pulsar-connectors.sh:ro
+      - ../scripts/pulsar/init-pulsar-functions.sh:/init-pulsar-functions.sh:ro
+      - ../scripts/pulsar/init-pulsar-topics.sh:/init-pulsar-topics.sh:ro
+      - ../functions:/functions
+      - ../connectors/mongo:/mongo-connectors
+    command: bash -c "bin/apply-config-from-env.py conf/standalone.conf && exec bin/pulsar standalone -nss && exec bin/pulsar sql-worker start"
+    depends_on:
+      - mongo1
+
+  dashboard:
+    image: apachepulsar/pulsar-manager:latest
+    container_name: dashboard
+    hostname: dashboard
+    networks:
+      - services-network
+    ports:
+      - "9527:9527"
+      - "7750:7750"
+    depends_on:
+      - pulsar
+    links:
+      - pulsar
+    environment:
+      SPRING_CONFIGURATION_FILE: /pulsar-manager/pulsar-manager/application.properties
+
+  dashboard-init:
+    image: apachepulsar/pulsar:latest
+    networks:
+      - services-network
+    volumes:
+      - ../scripts/pulsar/init-dashboard.sh:/init-dashboard.sh:ro
+    command: /init-dashboard.sh
+    depends_on:
+      - dashboard
+
+volumes:
+  mongo1_data:
+  mongo1_config:
+  pulsar_data:
